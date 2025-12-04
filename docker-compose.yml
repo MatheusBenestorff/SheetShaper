@@ -1,0 +1,8 @@
+services:
+  sheetshaper:
+    build: .
+    image: sheetshaper:latest
+    volumes:
+      - ./examples:/data
+    environment:
+      - APP_ROOT=/data
