@@ -1,0 +1,33 @@
+{
+  "jobName": "Sales_Data_Cleanup",
+  "steps": [
+    {
+      "stepId": "1",
+      "action": "LoadSource",
+      "params": {
+        "file": "raw_sales.xlsx",
+        "alias": "SourceData"
+      }
+    },
+    {
+      "stepId": "2",
+      "action": "MapColumns",
+      "params": {
+        "sourceSheet": "SourceData",
+        "targetSheet": "CleanData",
+        "mappings": [
+          { "from": "A", "to": "A", "header": "Date" },
+          { "from": "C", "to": "B", "header": "Customer" },
+          { "from": "F", "to": "C", "header": "Total", "format": "Currency" }
+        ]
+      }
+    },
+    {
+      "stepId": "3",
+      "action": "SaveFile",
+      "params": {
+        "fileName": "clean_sales_report.xlsx"
+      }
+    }
+  ]
+}
