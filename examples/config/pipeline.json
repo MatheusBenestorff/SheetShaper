@@ -1,0 +1,21 @@
+{
+  "jobName": "Teste_Load_Save",
+  "steps": [
+    {
+      "stepId": "01",
+      "action": "LoadSource",
+      "params": {
+        "file": "teste.xlsx",
+        "alias": "MeuExcel"
+      }
+    },
+    {
+      "stepId": "02",
+      "action": "SaveFile",
+      "params": {
+        "fileName": "teste_copia.xlsx",
+        "sourceAlias": "MeuExcel"
+      }
+    }
+  ]
+}

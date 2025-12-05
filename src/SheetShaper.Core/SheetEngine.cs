@@ -103,14 +103,27 @@ public class SheetEngine
         if (!step.Params.ContainsKey(key))
             throw new ArgumentException($"Missing required parameter '{key}' for action '{step.Action}'");
 
-        var element = (JsonElement)step.Params[key];
-        return element.ToString();
+        object value = step.Params[key];
+
+        if (value is JsonElement element)
+        {
+            return element.ToString();
+        }
+
+        return value.ToString() ?? string.Empty;
     }
 
     private string? GetOptionalParam(PipelineStep step, string key)
     {
         if (!step.Params.ContainsKey(key)) return null;
-        var element = (JsonElement)step.Params[key];
-        return element.ToString();
+        
+        object value = step.Params[key];
+
+        if (value is JsonElement element)
+        {
+            return element.ToString();
+        }
+
+        return value.ToString();
     }
 }
