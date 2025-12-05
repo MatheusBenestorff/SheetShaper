@@ -44,7 +44,7 @@ public class SheetEngine
                 // Implement Mapping
                 break;
             case "SaveFile":
-                // ExecuteSaveFile(step, outPath);
+                ExecuteSaveFile(step, outPath);
                 break;
             default:
                 Console.WriteLine($"     [Warn] Unknown Action: {step.Action}");
@@ -70,6 +70,30 @@ public class SheetEngine
         _workbooks.Add(alias, workbook);
     }
 
+    private void ExecuteSaveFile(PipelineStep step, string outputRoot)
+    {
+        string fileName = GetParam(step, "fileName");
+        
+        string alias = GetOptionalParam(step, "sourceAlias");
+
+        IXLWorkbook workbookToSave;
+
+        if (string.IsNullOrEmpty(alias))
+        {
+            workbookToSave = _workbooks.Values.First();
+        }
+        else
+        {
+            if (!_workbooks.ContainsKey(alias))
+                throw new Exception($"Workbook with alias '{alias}' not found in memory.");
+            workbookToSave = _workbooks[alias];
+        }
+
+        string fullPath = Path.Combine(outputRoot, fileName);
+        Console.WriteLine($"     saving to '{fileName}'...");
+
+        workbookToSave.SaveAs(fullPath);
+    }
 
 
     // --- HELPERS ---
