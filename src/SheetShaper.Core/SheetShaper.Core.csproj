@@ -4,6 +4,15 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <PackageId>SheetShaper.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Matheus Benestorff</Authors>
+    <Company>Matheus Benestorff</Company>
+    <Description>A declarative ETL engine for Excel processing using ClosedXML.</Description>
+    <PackageTags>excel;etl;pipeline;closedxml;automation</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
   </PropertyGroup>
 
   <ItemGroup>
