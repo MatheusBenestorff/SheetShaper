@@ -5,7 +5,7 @@ namespace SheetShaper.Core;
 
 public class SheetEngine
 {
-    private readonly Dictionary<string, IXLWorkbook> _workbookContext = new();
+    private readonly Dictionary<string, IXLWorkbook> _workbooks = new();
 
     public void Execute(SheetJob job, string inputRootFolder, string outputRootFolder)
     {
@@ -26,8 +26,11 @@ public class SheetEngine
             }
         }
         
-        foreach(var wb in _workbookContext.Values) wb.Dispose();
-        _workbookContext.Clear();
+        foreach(var wb in _workbooks.Values) 
+        {
+            wb.Dispose();
+        }
+        _workbooks.Clear();
     }
 
     private void ExecuteStep(PipelineStep step, string inPath, string outPath)
@@ -35,17 +38,55 @@ public class SheetEngine
         switch (step.Action)
         {
             case "LoadSource":
-                // Implement Load
+                ExecuteLoadSource(step, inPath);
                 break;
             case "MapColumns":
                 // Implement Mapping
                 break;
             case "SaveFile":
-                // Implement Save
+                // ExecuteSaveFile(step, outPath);
                 break;
             default:
                 Console.WriteLine($"     [Warn] Unknown Action: {step.Action}");
                 break;
         }
+    }
+
+    // --- ACTIONS ---
+
+    private void ExecuteLoadSource(PipelineStep step, string inputRoot)
+    {
+        string fileName = GetParam(step, "file");
+        string alias = GetParam(step, "alias");
+        
+        string fullPath = Path.Combine(inputRoot, fileName);
+
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"Input Excel file not found: {fullPath}");
+
+        Console.WriteLine($"     loading '{fileName}' as '{alias}'...");
+        
+        var workbook = new XLWorkbook(fullPath);
+        _workbooks.Add(alias, workbook);
+    }
+
+
+
+    // --- HELPERS ---
+
+    private string GetParam(PipelineStep step, string key)
+    {
+        if (!step.Params.ContainsKey(key))
+            throw new ArgumentException($"Missing required parameter '{key}' for action '{step.Action}'");
+
+        var element = (JsonElement)step.Params[key];
+        return element.ToString();
+    }
+
+    private string? GetOptionalParam(PipelineStep step, string key)
+    {
+        if (!step.Params.ContainsKey(key)) return null;
+        var element = (JsonElement)step.Params[key];
+        return element.ToString();
     }
 }
