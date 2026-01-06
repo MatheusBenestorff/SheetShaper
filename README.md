@@ -35,7 +35,7 @@ Each step requires an action and a set of params.
       "stepId": "1",
       "action": "LoadSource",
       "params": {
-        "file": "raw_data_2024.xlsx",
+        "file": "teste.xlsx",
         "alias": "Source"
       }
     },
@@ -46,8 +46,8 @@ Each step requires an action and a set of params.
         "sourceSheet": "Source",
         "targetSheet": "Report",
         "mappings": [
-          { "from": "A", "to": "A", "header": "Date" },
-          { "from": "F", "to": "C", "header": "Total Revenue" }
+          { "from": "A", "to": "A", "header": "Data Venda" },
+          { "from": "F", "to": "B", "header": "Receita Total" }
         ]
       }
     },
@@ -55,7 +55,8 @@ Each step requires an action and a set of params.
       "stepId": "3",
       "action": "SaveFile",
       "params": {
-        "fileName": "clean_report_2024.xlsx"
+        "fileName": "clean_report_2024.xlsx",
+        "sourceAlias": "Report"
       }
     }
   ]
