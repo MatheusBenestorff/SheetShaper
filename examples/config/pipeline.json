@@ -1,20 +1,32 @@
 {
-  "jobName": "Teste_Load_Save",
+  "jobName": "Sales_Data_Cleanup",
   "steps": [
     {
-      "stepId": "01",
+      "stepId": "1",
       "action": "LoadSource",
       "params": {
         "file": "teste.xlsx",
-        "alias": "MeuExcel"
+        "alias": "Source"
       }
     },
     {
-      "stepId": "02",
+      "stepId": "2",
+      "action": "MapColumns",
+      "params": {
+        "sourceSheet": "Source",
+        "targetSheet": "Report",
+        "mappings": [
+          { "from": "A", "to": "A", "header": "Data Venda" },
+          { "from": "F", "to": "B", "header": "Receita Total" }
+        ]
+      }
+    },
+    {
+      "stepId": "3",
       "action": "SaveFile",
       "params": {
-        "fileName": "teste_copia.xlsx",
-        "sourceAlias": "MeuExcel"
+        "fileName": "clean_report_2024.xlsx",
+        "sourceAlias": "Report"
       }
     }
   ]
