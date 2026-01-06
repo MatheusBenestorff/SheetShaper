@@ -115,6 +115,95 @@ public class SheetEngineTests : IDisposable
         );
     }
 
+    [Fact]
+    public void Should_Map_Columns_Correctly()
+    {
+        //ARRANGE
+        string inputFile = "messy_data.xlsx";
+        string outputFile = "clean_data.xlsx";
+        string inputPath = Path.Combine(_inputFolder, inputFile);
+
+        using (var wb = new XLWorkbook())
+        {
+            var ws = wb.Worksheets.Add("Sheet1");
+            
+            ws.Cell("A1").Value = "Old_Date";
+            ws.Cell("A2").Value = "2024-01-01";
+
+            ws.Cell("B1").Value = "Garbage_Data";
+            ws.Cell("B2").Value = "IgnoreMe";
+
+            ws.Cell("C1").Value = "Old_Total";
+            ws.Cell("C2").Value = "1500";
+
+            wb.SaveAs(inputPath);
+        }
+
+        var mappingRules = new List<object>
+        {
+            new { From = "A", To = "A", Header = "Date" },    
+            new { From = "C", To = "B", Header = "Revenue" }    
+        };
+
+        string mappingsJson = System.Text.Json.JsonSerializer.Serialize(mappingRules);
+
+        var job = new SheetJob
+        {
+            JobName = "Test_Mapping",
+            Steps = new List<PipelineStep>
+            {
+                new PipelineStep
+                {
+                    StepId = "1", Action = "LoadSource",
+                    Params = new Dictionary<string, object> 
+                    { 
+                        { "file", inputFile }, 
+                        { "alias", "Source" } 
+                    }
+                },
+                new PipelineStep
+                {
+                    StepId = "2", Action = "MapColumns",
+                    Params = new Dictionary<string, object> 
+                    { 
+                        { "sourceSheet", "Source" },
+                        { "targetSheet", "CleanReport" },
+                        { "mappings", mappingsJson } 
+                    }
+                },
+                new PipelineStep
+                {
+                    StepId = "3", Action = "SaveFile",
+                    Params = new Dictionary<string, object> 
+                    { 
+                        { "fileName", outputFile }, 
+                        { "sourceAlias", "CleanReport" } 
+                    }
+                }
+            }
+        };
+
+        var engine = new SheetEngine();
+
+        //ACT
+        engine.Execute(job, _inputFolder, _outputFolder);
+
+        //ASSERT
+        string outputPath = Path.Combine(_outputFolder, outputFile);
+        Assert.True(File.Exists(outputPath), "Output file should have been created.");
+
+        using var resultWb = new XLWorkbook(outputPath);
+        var wsResult = resultWb.Worksheet(1);
+
+        Assert.Equal("Date", wsResult.Cell("A1").Value.ToString());
+        Assert.Equal("2024-01-01", wsResult.Cell("A2").Value.ToString());
+
+        Assert.Equal("Revenue", wsResult.Cell("B1").Value.ToString());
+        Assert.Equal("1500", wsResult.Cell("B2").Value.ToString());
+
+        Assert.True(wsResult.Cell("C1").IsEmpty());
+    }
+
     // Aux
     private void CreateDummyExcel(string path, string content)
     {
