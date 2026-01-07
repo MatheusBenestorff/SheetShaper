@@ -1,262 +1,64 @@
 using ClosedXML.Excel;
-using System.Text.Json;
+using SheetShaper.Core.Actions; 
 
 namespace SheetShaper.Core;
 
 public class SheetEngine
 {
     private readonly Dictionary<string, IXLWorkbook> _workbooks = new();
+    
+    // Register of all actions
+    private readonly Dictionary<string, ISheetAction> _availableActions;
+    
+    public SheetEngine()
+    {
+        _availableActions = new Dictionary<string, ISheetAction>(StringComparer.OrdinalIgnoreCase);
 
-    public void Execute(SheetJob job, string inputRootFolder, string outputRootFolder)
+        Register(new LoadSourceAction());
+        Register(new SaveFileAction());
+        Register(new MapColumnsAction());
+        Register(new FilterRowsAction()); 
+    }
+
+    private void Register(ISheetAction action)
+    {
+        _availableActions[action.ActionName] = action;
+    }
+
+    public void Execute(SheetJob job, string inputRoot, string outputRoot)
     {
         Console.WriteLine($"[Engine] Starting Job: {job.JobName}");
 
-        foreach (var step in job.Steps)
+        try
         {
-            Console.WriteLine($"  -> Executing Step {step.StepId}: {step.Action}");
-            
-            try 
+            foreach (var step in job.Steps)
             {
-                ExecuteStep(step, inputRootFolder, outputRootFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[Error] Step {step.StepId} failed: {ex.Message}");
-                throw; 
-            }
-        }
-        
-        foreach(var wb in _workbooks.Values) 
-        {
-            wb.Dispose();
-        }
-        _workbooks.Clear();
-    }
+                Console.WriteLine($"  -> Executing Step {step.StepId}: {step.Action}");
 
-    private void ExecuteStep(PipelineStep step, string inPath, string outPath)
-    {
-        switch (step.Action)
-        {
-            case "LoadSource":
-                ExecuteLoadSource(step, inPath);
-                break;
-            case "MapColumns":
-                ExecuteMapColumns(step);
-                break;
-            case "SaveFile":
-                ExecuteSaveFile(step, outPath);
-                break;
-            case "FilterRows":
-                ExecuteFilterRows(step);
-                break;
-            default:
-                Console.WriteLine($"     [Warn] Unknown Action: {step.Action}");
-                break;
-        }
-    }
-
-    // --- ACTIONS ---
-
-    private void ExecuteLoadSource(PipelineStep step, string inputRoot)
-    {
-        string fileName = GetParam(step, "file");
-        string alias = GetParam(step, "alias");
-        
-        string fullPath = Path.Combine(inputRoot, fileName);
-
-        if (!File.Exists(fullPath))
-            throw new FileNotFoundException($"Input Excel file not found: {fullPath}");
-
-        Console.WriteLine($"     loading '{fileName}' as '{alias}'...");
-        
-        var workbook = new XLWorkbook(fullPath);
-        _workbooks.Add(alias, workbook);
-    }
-
-    private void ExecuteMapColumns(PipelineStep step)
-    {
-        string sourceAlias = GetParam(step, "sourceSheet");
-        string targetAlias = GetParam(step, "targetSheet");
-        
-        if (!_workbooks.ContainsKey(sourceAlias))
-            throw new Exception($"Source workbook '{sourceAlias}' not loaded.");
-
-        var sourceWb = _workbooks[sourceAlias];
-        var sourceWs = sourceWb.Worksheets.First();
-
-        var targetWb = new XLWorkbook();
-        var targetWs = targetWb.Worksheets.Add("Data");
-        
-        Console.WriteLine($"     Mapping columns from '{sourceAlias}' to new workbook '{targetAlias}'...");
-
-        var mappingsJson = GetParam(step, "mappings");
-        var rules = JsonSerializer.Deserialize<List<MappingRule>>(mappingsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        if (rules == null || !rules.Any())
-            throw new Exception("No mappings defined.");
-
-        int lastRow = sourceWs.LastRowUsed()?.RowNumber() ?? 0;
-
-        foreach (var rule in rules)
-        {
-            targetWs.Cell($"{rule.To}1").Value = rule.Header;
-            targetWs.Cell($"{rule.To}1").Style.Font.Bold = true; 
-
-            if (lastRow >= 2)
-            {
-                var sourceRange = sourceWs.Range($"{rule.From}2:{rule.From}{lastRow}");
-                
-                var targetCell = targetWs.Cell($"{rule.To}2");
-                
-                var dataValues = sourceRange.Cells().Select(c => c.Value).ToList();
-                
-                for (int i = 0; i < dataValues.Count; i++)
+                if (!_availableActions.ContainsKey(step.Action))
                 {
-                    targetWs.Cell(2 + i, rule.To).Value = dataValues[i];
+                    Console.WriteLine($"     [Warn] Unknown Action: {step.Action}");
+                    continue;
+                }
+
+                var action = _availableActions[step.Action];
+                var context = new ActionContext(_workbooks, step, inputRoot, outputRoot);
+
+                try
+                {
+                    action.Execute(context);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"[Error] Step {step.StepId} ({step.Action}) failed: {ex.Message}");
+                    throw;
                 }
             }
         }
-
-        _workbooks.Add(targetAlias, targetWb);
-    }
-
-    private void ExecuteSaveFile(PipelineStep step, string outputRoot)
-    {
-        string fileName = GetParam(step, "fileName");
-        
-        string alias = GetOptionalParam(step, "sourceAlias");
-
-        IXLWorkbook workbookToSave;
-
-        if (string.IsNullOrEmpty(alias))
+        finally
         {
-            workbookToSave = _workbooks.Values.First();
+            foreach(var wb in _workbooks.Values) wb.Dispose();
+            _workbooks.Clear();
         }
-        else
-        {
-            if (!_workbooks.ContainsKey(alias))
-                throw new Exception($"Workbook with alias '{alias}' not found in memory.");
-            workbookToSave = _workbooks[alias];
-        }
-
-        string fullPath = Path.Combine(outputRoot, fileName);
-        Console.WriteLine($"     saving to '{fileName}'...");
-
-        workbookToSave.SaveAs(fullPath);
-    }
-
-
-    private void ExecuteFilterRows(PipelineStep step)
-    {
-        string sourceAlias = GetParam(step, "sourceSheet");
-        string targetAlias = GetParam(step, "targetSheet");
-        string column = GetParam(step, "column");
-        string op = GetParam(step, "operator");
-        string targetValueRaw = GetParam(step, "value"); 
-
-        if (!_workbooks.ContainsKey(sourceAlias))
-            throw new Exception($"Source workbook '{sourceAlias}' not loaded.");
-
-        var sourceWb = _workbooks[sourceAlias];
-        var sourceWs = sourceWb.Worksheets.First();
-
-        var targetWb = new XLWorkbook();
-        var targetWs = targetWb.Worksheets.Add("FilteredData");
-
-        Console.WriteLine($"     Filtering '{sourceAlias}' where Column {column} {op} {targetValueRaw}...");
-
-        var headerRow = sourceWs.Row(1);
-        if (!headerRow.IsEmpty())
-        {
-            for (int i = 1; i <= headerRow.LastCellUsed().Address.ColumnNumber; i++)
-            {
-                targetWs.Cell(1, i).Value = headerRow.Cell(i).Value;
-            }
-            targetWs.Row(1).Style.Font.Bold = true;
-        }
-
-        var rows = sourceWs.RangeUsed().RowsUsed().Skip(1); 
-        int targetRowIndex = 2;
-
-        foreach (var row in rows)
-        {
-            var cell = row.Cell(column);
-            
-            if (EvaluateCondition(cell, op, targetValueRaw))
-            {
-                int maxCol = row.LastCellUsed().Address.ColumnNumber;
-                for (int i = 1; i <= maxCol; i++)
-                {
-                    targetWs.Cell(targetRowIndex, i).Value = row.Cell(i).Value;
-                }
-                targetRowIndex++;
-            }
-        }
-
-        _workbooks.Add(targetAlias, targetWb);
-        Console.WriteLine($"     -> Filter Result: {targetRowIndex - 2} rows kept.");
-    }
-
-    // --- HELPERS ---
-
-    private string GetParam(PipelineStep step, string key)
-    {
-        if (!step.Params.ContainsKey(key))
-            throw new ArgumentException($"Missing required parameter '{key}' for action '{step.Action}'");
-
-        object value = step.Params[key];
-
-        if (value is JsonElement element)
-        {
-            return element.ToString();
-        }
-
-        return value.ToString() ?? string.Empty;
-    }
-
-    private string? GetOptionalParam(PipelineStep step, string key)
-    {
-        if (!step.Params.ContainsKey(key)) return null;
-        
-        object value = step.Params[key];
-
-        if (value is JsonElement element)
-        {
-            return element.ToString();
-        }
-
-        return value.ToString();
-    }
-
-    private bool EvaluateCondition(IXLCell cell, string op, string targetValueStr)
-    {
-        bool isCellNumeric = cell.DataType == XLDataType.Number;
-        double cellNumber = isCellNumeric ? cell.GetValue<double>() : 0;
-        
-        bool isTargetNumeric = double.TryParse(targetValueStr, out double targetNumber);
-
-        if (isCellNumeric && isTargetNumeric)
-        {
-            return op.ToLower() switch
-            {
-                "equals" or "=" or "==" => Math.Abs(cellNumber - targetNumber) < 0.0001,
-                "notequals" or "!=" => Math.Abs(cellNumber - targetNumber) > 0.0001,
-                "greaterthan" or ">" => cellNumber > targetNumber,
-                "lessthan" or "<" => cellNumber < targetNumber,
-                "greaterorequal" or ">=" => cellNumber >= targetNumber,
-                "lessorequal" or "<=" => cellNumber <= targetNumber,
-                _ => false
-            };
-        }
-
-        string cellText = cell.GetText();
-        
-        return op.ToLower() switch
-        {
-            "equals" or "=" or "==" => string.Equals(cellText, targetValueStr, StringComparison.OrdinalIgnoreCase),
-            "notequals" or "!=" => !string.Equals(cellText, targetValueStr, StringComparison.OrdinalIgnoreCase),
-            "contains" => cellText.Contains(targetValueStr, StringComparison.OrdinalIgnoreCase),
-            _ => false
-        };
     }
 }
