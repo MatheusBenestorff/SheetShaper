@@ -12,7 +12,7 @@ public class MapColumnsAction : ISheetAction
         string sourceAlias = context.GetParam("sourceSheet");
         string targetAlias = context.GetParam("targetSheet");
 
-        if (! context.Workbooks.ContainsKey(sourceAlias))
+        if (!context.Workbooks.ContainsKey(sourceAlias))
             throw new Exception($"Source workbook '{sourceAlias}' not loaded.");
 
         var sourceWb = context.Workbooks[sourceAlias];
