@@ -204,6 +204,71 @@ public class SheetEngineTests : IDisposable
         Assert.True(wsResult.Cell("C1").IsEmpty());
     }
 
+    [Fact]
+    public void Should_Filter_Rows_Correctly()
+    {
+        // ARRANGE
+        string inputFile = "filter_test.xlsx";
+        string outputFile = "filtered_output.xlsx";
+        
+        using (var wb = new XLWorkbook())
+        {
+            var ws = wb.Worksheets.Add("Sheet1");
+            ws.Cell("A1").Value = "Category"; ws.Cell("B1").Value = "Value";
+            
+            ws.Cell("A2").Value = "Keep";     ws.Cell("B2").Value = 500; 
+            ws.Cell("A3").Value = "Drop";     ws.Cell("B3").Value = 100;
+            ws.Cell("A4").Value = "Keep";     ws.Cell("B4").Value = 10; 
+            
+            wb.SaveAs(Path.Combine(_inputFolder, inputFile));
+        }
+
+        var job = new SheetJob
+        {
+            JobName = "Test_Filtering",
+            Steps = new List<PipelineStep>
+            {
+                new PipelineStep { StepId="1", Action="LoadSource", Params=new Dictionary<string,object> { {"file", inputFile}, {"alias", "Source"} } },
+                
+                new PipelineStep 
+                { 
+                    StepId="2", Action="FilterRows", 
+                    Params=new Dictionary<string,object> 
+                    { 
+                        {"sourceSheet", "Source"}, {"targetSheet", "Step1"}, 
+                        {"column", "A"}, {"operator", "Equals"}, {"value", "Keep"} 
+                    } 
+                },
+
+                new PipelineStep 
+                { 
+                    StepId="3", Action="FilterRows", 
+                    Params=new Dictionary<string,object> 
+                    { 
+                        {"sourceSheet", "Step1"}, {"targetSheet", "Final"}, 
+                        {"column", "B"}, {"operator", "GreaterThan"}, {"value", 100} 
+                    } 
+                },
+
+                new PipelineStep { StepId="4", Action="SaveFile", Params=new Dictionary<string,object> { {"fileName", outputFile}, {"sourceAlias", "Final"} } }
+            }
+        };
+
+        var engine = new SheetEngine();
+
+        //ACT
+        engine.Execute(job, _inputFolder, _outputFolder);
+
+        // ASSERT
+        using var resultWb = new XLWorkbook(Path.Combine(_outputFolder, outputFile));
+        var wsResult = resultWb.Worksheet(1);
+        
+        int rowCount = wsResult.RangeUsed().RowsUsed().Count();
+        Assert.Equal(2, rowCount); 
+
+        Assert.Equal(500, wsResult.Cell("B2").GetValue<double>());
+    }
+
     // Aux
     private void CreateDummyExcel(string path, string content)
     {
