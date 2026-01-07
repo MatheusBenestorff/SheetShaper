@@ -46,6 +46,9 @@ public class SheetEngine
             case "SaveFile":
                 ExecuteSaveFile(step, outPath);
                 break;
+            case "FilterRows":
+                ExecuteFilterRows(step);
+                break;
             default:
                 Console.WriteLine($"     [Warn] Unknown Action: {step.Action}");
                 break;
@@ -143,6 +146,57 @@ public class SheetEngine
     }
 
 
+    private void ExecuteFilterRows(PipelineStep step)
+    {
+        string sourceAlias = GetParam(step, "sourceSheet");
+        string targetAlias = GetParam(step, "targetSheet");
+        string column = GetParam(step, "column");
+        string op = GetParam(step, "operator");
+        string targetValueRaw = GetParam(step, "value"); 
+
+        if (!_workbooks.ContainsKey(sourceAlias))
+            throw new Exception($"Source workbook '{sourceAlias}' not loaded.");
+
+        var sourceWb = _workbooks[sourceAlias];
+        var sourceWs = sourceWb.Worksheets.First();
+
+        var targetWb = new XLWorkbook();
+        var targetWs = targetWb.Worksheets.Add("FilteredData");
+
+        Console.WriteLine($"     Filtering '{sourceAlias}' where Column {column} {op} {targetValueRaw}...");
+
+        var headerRow = sourceWs.Row(1);
+        if (!headerRow.IsEmpty())
+        {
+            for (int i = 1; i <= headerRow.LastCellUsed().Address.ColumnNumber; i++)
+            {
+                targetWs.Cell(1, i).Value = headerRow.Cell(i).Value;
+            }
+            targetWs.Row(1).Style.Font.Bold = true;
+        }
+
+        var rows = sourceWs.RangeUsed().RowsUsed().Skip(1); 
+        int targetRowIndex = 2;
+
+        foreach (var row in rows)
+        {
+            var cell = row.Cell(column);
+            
+            if (EvaluateCondition(cell, op, targetValueRaw))
+            {
+                int maxCol = row.LastCellUsed().Address.ColumnNumber;
+                for (int i = 1; i <= maxCol; i++)
+                {
+                    targetWs.Cell(targetRowIndex, i).Value = row.Cell(i).Value;
+                }
+                targetRowIndex++;
+            }
+        }
+
+        _workbooks.Add(targetAlias, targetWb);
+        Console.WriteLine($"     -> Filter Result: {targetRowIndex - 2} rows kept.");
+    }
+
     // --- HELPERS ---
 
     private string GetParam(PipelineStep step, string key)
@@ -172,5 +226,37 @@ public class SheetEngine
         }
 
         return value.ToString();
+    }
+
+    private bool EvaluateCondition(IXLCell cell, string op, string targetValueStr)
+    {
+        bool isCellNumeric = cell.DataType == XLDataType.Number;
+        double cellNumber = isCellNumeric ? cell.GetValue<double>() : 0;
+        
+        bool isTargetNumeric = double.TryParse(targetValueStr, out double targetNumber);
+
+        if (isCellNumeric && isTargetNumeric)
+        {
+            return op.ToLower() switch
+            {
+                "equals" or "=" or "==" => Math.Abs(cellNumber - targetNumber) < 0.0001,
+                "notequals" or "!=" => Math.Abs(cellNumber - targetNumber) > 0.0001,
+                "greaterthan" or ">" => cellNumber > targetNumber,
+                "lessthan" or "<" => cellNumber < targetNumber,
+                "greaterorequal" or ">=" => cellNumber >= targetNumber,
+                "lessorequal" or "<=" => cellNumber <= targetNumber,
+                _ => false
+            };
+        }
+
+        string cellText = cell.GetText();
+        
+        return op.ToLower() switch
+        {
+            "equals" or "=" or "==" => string.Equals(cellText, targetValueStr, StringComparison.OrdinalIgnoreCase),
+            "notequals" or "!=" => !string.Equals(cellText, targetValueStr, StringComparison.OrdinalIgnoreCase),
+            "contains" => cellText.Contains(targetValueStr, StringComparison.OrdinalIgnoreCase),
+            _ => false
+        };
     }
 }
