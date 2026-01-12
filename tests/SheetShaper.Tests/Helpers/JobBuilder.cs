@@ -56,5 +56,21 @@ public class JobBuilder
         return this;
     }
 
+    public JobBuilder AddPivotStep(string id, string source, string target, string groupCol, string keyCol, string valCol)
+    {
+        _job.Steps.Add(new PipelineStep 
+        { 
+            StepId = id, Action = "PivotSheet", 
+            Params = new Dictionary<string, object> { 
+                { "sourceSheet", source }, 
+                { "targetSheet", target }, 
+                { "groupByColumn", groupCol }, 
+                { "pivotKeyColumn", keyCol }, 
+                { "pivotValueColumn", valCol } 
+            } 
+        });
+        return this;
+    }
+
     public SheetJob Build() => _job;
 }
