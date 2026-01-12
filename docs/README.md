@@ -67,10 +67,10 @@ Each step requires an action and a set of params.
 
 Detailed guide for available Actions:
 
-* [Load & Save](docs/actions/io-actions.md)
-* [Map Columns](docs/actions/map-columns.md)
-* [Filter Rows](docs/actions/filter-rows.md)
-* [Pivot Sheet](docs/actions/pivot-sheet.md)
+* [Load & Save](actions/io-actions.md)
+* [Map Columns](actions/map-columns.md)
+* [Filter Rows](actions/filter-rows.md)
+* [Pivot Sheet](actions/pivot-sheet.md)
 
 ### Architecture
 
