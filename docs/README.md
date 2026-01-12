@@ -63,11 +63,14 @@ Each step requires an action and a set of params.
 }
 ```
 
-## Supported Actions (v1.0)
+## Documentation
 
-- **LoadSource:** Loads an .xlsx file into memory.
-- **MapColumns:** Moves data from specific columns in the source to the target.
-- **SaveFile:** Exports the in-memory workbook to the output/ folder.
+Detailed guide for available Actions:
+
+* [Load & Save](docs/actions/io-actions.md)
+* [Map Columns](docs/actions/map-columns.md)
+* [Filter Rows](docs/actions/filter-rows.md)
+* [Pivot Sheet](docs/actions/pivot-sheet.md)
 
 ### Architecture
 
