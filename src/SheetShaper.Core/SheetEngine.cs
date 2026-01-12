@@ -18,6 +18,7 @@ public class SheetEngine
         Register(new SaveFileAction());
         Register(new MapColumnsAction());
         Register(new FilterRowsAction()); 
+        Register(new PivotSheetAction());
     }
 
     private void Register(ISheetAction action)
