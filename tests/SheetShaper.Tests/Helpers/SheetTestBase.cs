@@ -69,19 +69,15 @@ public abstract class SheetTestBase : IDisposable
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("DadosSAP");
         
-        // Cabeçalhos (A=Caracteristica, B=Valor, E=NumeroOV)
         ws.Cell("A1").Value = "Caracteristica"; 
         ws.Cell("B1").Value = "Valor"; 
         ws.Cell("E1").Value = "OV_ID";
 
-        // OV-100 (Tem Peso e Cor)
         ws.Cell("A2").Value = "Peso"; ws.Cell("B2").Value = "10kg"; ws.Cell("E2").Value = "OV-100";
         ws.Cell("A3").Value = "Cor";  ws.Cell("B3").Value = "Azul"; ws.Cell("E3").Value = "OV-100";
 
-        // OV-200 (Tem apenas Cor)
         ws.Cell("A4").Value = "Cor";  ws.Cell("B4").Value = "Verde"; ws.Cell("E4").Value = "OV-200";
 
-        // OV-300 (Tem Peso, Cor e Tamanho)
         ws.Cell("A5").Value = "Tamanho"; ws.Cell("B5").Value = "G";      ws.Cell("E5").Value = "OV-300";
         ws.Cell("A6").Value = "Peso";    ws.Cell("B6").Value = "5kg";    ws.Cell("E6").Value = "OV-300";
         ws.Cell("A7").Value = "Cor";     ws.Cell("B7").Value = "Branco"; ws.Cell("E7").Value = "OV-300";

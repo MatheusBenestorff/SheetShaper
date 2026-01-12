@@ -10,7 +10,7 @@ public class LoadSaveTests : SheetTestBase
     [Fact]
     public void Should_Load_Excel_And_Save_Copy()
     {
-        // 1. Arrange
+        // Arrange
         string inputFile = "source.xlsx";
         string outputFile = "result.xlsx";
         
@@ -21,10 +21,10 @@ public class LoadSaveTests : SheetTestBase
             .AddSaveStep("2", outputFile, "MySheet")
             .Build();
 
-        // 2. Act
+        // Act
         _engine.Execute(job, _inputFolder, _outputFolder);
 
-        // 3. Assert
+        // Assert
         Assert.True(File.Exists(GetOutPath(outputFile)));
         
         using var wb = new XLWorkbook(GetOutPath(outputFile));

@@ -11,7 +11,7 @@ public class PivotSheetTests : SheetTestBase
     [Fact]
     public void Should_Pivot_Rows_Into_Columns_Correctly()
     {
-        // 1. ARRANGE
+        // ARRANGE
         string inputFile = "sap_data.xlsx";
         string outputFile = "report_ov.xlsx";
         
@@ -26,17 +26,17 @@ public class PivotSheetTests : SheetTestBase
             .AddSaveStep("3", outputFile, "Pivoted")
             .Build();
 
-        // 2. ACT
+        // ACT
         _engine.Execute(job, _inputFolder, _outputFolder);
 
-        // 3. ASSERT
+        // ASSERT
         Assert.True(File.Exists(GetOutPath(outputFile)));
 
         using var wb = new XLWorkbook(GetOutPath(outputFile));
         var ws = wb.Worksheet(1);
 
         
-        Assert.Equal("ID (OV)", ws.Cell("A1").Value.ToString());
+        Assert.Equal("ID", ws.Cell("A1").Value.ToString());
         Assert.Equal("Cor",     ws.Cell("B1").Value.ToString());
         Assert.Equal("Peso",    ws.Cell("C1").Value.ToString());
         Assert.Equal("Tamanho", ws.Cell("D1").Value.ToString());

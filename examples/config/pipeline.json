@@ -11,21 +11,21 @@
     },
     {
       "stepId": "2",
-      "action": "PivotSheet",
+      "action": "MapColumns",
       "params": {
         "sourceSheet": "Source",
         "targetSheet": "Report",
-        
-        "groupByColumn": "E",   
-        "pivotKeyColumn": "A",  
-        "pivotValueColumn": "B" 
+        "mappings": [
+          { "from": "A", "to": "A", "header": "Data Venda" },
+          { "from": "F", "to": "B", "header": "Receita Total" }
+        ]
       }
     },
     {
       "stepId": "3",
       "action": "SaveFile",
       "params": {
-        "fileName": "clean_report_2026.xlsx",
+        "fileName": "clean_report_2024.xlsx",
         "sourceAlias": "Report"
       }
     }
