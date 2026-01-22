@@ -71,6 +71,7 @@ Detailed guide for available Actions:
 * [Map Columns](actions/map-columns.md)
 * [Filter Rows](actions/filter-rows.md)
 * [Pivot Sheet](actions/pivot-sheet.md)
+* [Aggregate Rows](actions/aggregate-rows.md) 
 
 ### Architecture
 
