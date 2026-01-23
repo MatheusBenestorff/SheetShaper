@@ -84,4 +84,24 @@ public abstract class SheetTestBase : IDisposable
 
         wb.SaveAs(GetInPath(fileName));
     }
+
+    protected void SeedAggregateDataExcel(string fileName)
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("SalesData");
+        
+        ws.Cell("A1").Value = "Region"; 
+        ws.Cell("B1").Value = "SalesPerson"; 
+        ws.Cell("C1").Value = "Amount"; 
+        ws.Cell("D1").Value = "Score";
+
+        ws.Cell("A2").Value = "North"; ws.Cell("B2").Value = "John"; ws.Cell("C2").Value = 100; ws.Cell("D2").Value = 10;
+        ws.Cell("A3").Value = "North"; ws.Cell("B3").Value = "Doe";  ws.Cell("C3").Value = 200; ws.Cell("D3").Value = 20;
+
+        ws.Cell("A4").Value = "South"; ws.Cell("B4").Value = "Jane"; ws.Cell("C4").Value = 500; ws.Cell("D4").Value = 5;
+        
+        ws.Cell("A5").Value = "East";  ws.Cell("B5").Value = "Bob";  ws.Cell("C5").Value = 0;   ws.Cell("D5").Value = 0;
+
+        wb.SaveAs(GetInPath(fileName));
+    }
 }

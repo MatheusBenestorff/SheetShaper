@@ -72,5 +72,22 @@ public class JobBuilder
         return this;
     }
 
+    public JobBuilder AddAggregateStep(string id, string source, string target, string groupByCol, object operations)
+    {
+        string jsonOps = System.Text.Json.JsonSerializer.Serialize(operations);
+        
+        _job.Steps.Add(new PipelineStep 
+        { 
+            StepId = id, Action = "AggregateRows", 
+            Params = new Dictionary<string, object> { 
+                { "sourceSheet", source }, 
+                { "targetSheet", target }, 
+                { "groupByColumn", groupByCol }, 
+                { "operations", jsonOps } 
+            } 
+        });
+        return this;
+    }
+
     public SheetJob Build() => _job;
 }
