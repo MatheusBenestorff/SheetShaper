@@ -89,5 +89,27 @@ public class JobBuilder
         return this;
     }
 
+    public JobBuilder AddFormulaStep(string id, string sheet, string newHeader, string formula, string? format = null)
+    {
+        var paramsDict = new Dictionary<string, object> 
+        { 
+            { "sheet", sheet }, 
+            { "newHeader", newHeader }, 
+            { "formula", formula } 
+        };
+
+        if (!string.IsNullOrEmpty(format))
+        {
+            paramsDict.Add("format", format);
+        }
+
+        _job.Steps.Add(new PipelineStep 
+        { 
+            StepId = id, Action = "AddFormulaColumn", 
+            Params = paramsDict
+        });
+        return this;
+    }
+
     public SheetJob Build() => _job;
 }

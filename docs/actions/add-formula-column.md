@@ -64,7 +64,7 @@ Join First Name (Col A) and Last Name (Col B).
 
 - Formula: `A{row} & " " & B{row}`
 
-Or: CONCATENATE(A{row}, " ", B{row})
+Or: `CONCATENATE(A{row}, " ", B{row})`
 
 3. **Logical Conditions `(IF)`**
 

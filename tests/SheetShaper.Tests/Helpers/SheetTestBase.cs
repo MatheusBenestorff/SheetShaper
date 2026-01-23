@@ -104,4 +104,21 @@ public abstract class SheetTestBase : IDisposable
 
         wb.SaveAs(GetInPath(fileName));
     }
+
+    protected void SeedFormulaDataExcel(string fileName)
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("SalesData");
+        
+        ws.Cell("A1").Value = "Qty"; 
+        ws.Cell("B1").Value = "Price"; 
+
+        ws.Cell("A2").Value = 10;    
+        ws.Cell("B2").Value = 5.50;
+
+        ws.Cell("A3").Value = 2;     
+        ws.Cell("B3").Value = 20.00;
+
+        wb.SaveAs(GetInPath(fileName));
+    }
 }
