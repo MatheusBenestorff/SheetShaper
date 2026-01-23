@@ -19,6 +19,8 @@ public class SheetEngine
         Register(new MapColumnsAction());
         Register(new FilterRowsAction()); 
         Register(new PivotSheetAction());
+        Register(new AggregateRowsAction());
+        Register(new AddFormulaColumnAction());
     }
 
     private void Register(ISheetAction action)
