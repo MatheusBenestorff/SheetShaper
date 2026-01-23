@@ -72,6 +72,7 @@ Detailed guide for available Actions:
 * [Filter Rows](actions/filter-rows.md)
 * [Pivot Sheet](actions/pivot-sheet.md)
 * [Aggregate Rows](actions/aggregate-rows.md) 
+* [Add Formula Column](actions/add-formula-column.md) 
 
 ### Architecture
 
